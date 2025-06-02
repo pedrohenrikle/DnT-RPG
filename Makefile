@@ -1,4 +1,4 @@
-TARGET=ui-game
+TARGET=dnt-rpg
 CC=gcc
 DEBUG=-g
 OPT=-O0
