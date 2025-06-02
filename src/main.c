@@ -2,69 +2,11 @@
 #include <stdlib.h>
 #include <time.h>
 
+#include <classes.h>
+
 #include <ncurses.h>
 
 #define BAR_WIDTH 20
-
-// Define possible classes and an array to map them to strings.
-typedef enum { Warrior, Mage, Ranger, Paladin, Barbarian } Class;
-const char *classNames[] = { "Warrior", "Mage", "Ranger", "Paladin", "Barbarian" };
-
-typedef struct {
-    Class characterClass;
-    int hp;
-    int attack;
-    int defense;
-    int specialPercentage; // Chance (in percentage) to trigger the special.
-} Character;
-
-// Returns a color string based on the HP percentage.
-// Assumes maxHp is 100.
-int getHPColorPair(int hp, int maxHp) {
-    // For example, if hp is above 50% of maxHp, use green.
-    if (hp * 2 >= maxHp)
-        return 1;  // Green color pair.
-    // If above roughly 33%, use yellow.
-    else if (hp * 3 >= maxHp)
-        return 2;  // Yellow color pair.
-    else
-        return 3;  // Red color pair.
-}
-
-// Draws a health bar for a character given its current HP and a fixed max HP (e.g., 100).
-void drawHealthBar(const char *name, int hp, int maxHp) {
-    int filled = (hp * BAR_WIDTH) / maxHp;
-    
-    // Print the character's name in bold.
-    attron(A_BOLD);
-    printw("%-10s", name);
-    attroff(A_BOLD);
-    
-    printw(": [");
-
-    // Get the appropriate color pair for the filled portion.
-    int colorPair = getHPColorPair(hp, maxHp);
-    attron(COLOR_PAIR(colorPair));
-    for (int i = 0; i < filled; i++) {
-        printw("#");
-    }
-    attroff(COLOR_PAIR(colorPair));
-    
-    // Draw the empty portion of the bar.
-    for (int i = filled; i < BAR_WIDTH; i++) {
-        printw(" ");
-    }
-    
-    printw("] ");
-
-    // Reprint the hp values in the same color as the filled portion.
-    attron(COLOR_PAIR(colorPair));
-    printw("%3d", hp);
-    attroff(COLOR_PAIR(colorPair));
-    
-    printw("/%3d", maxHp);
-    printw("\n");
-}
 
 // Executes an attack from one character to another with class-specific modifiers.
 void performAttack(Character *attacker, Character *defender) {
@@ -77,7 +19,7 @@ void performAttack(Character *attacker, Character *defender) {
 
     // Display attack header with bold names and colored HP.
     attron(A_BOLD);
-    printw(">> %s", classNames[attacker->characterClass]);
+    printw(">> %s", attacker->className);
     attroff(A_BOLD);
 
     printw(" (");
@@ -89,7 +31,7 @@ void performAttack(Character *attacker, Character *defender) {
     printw(") attacks ");
 
     attron(A_BOLD);
-    printw("%s", classNames[defender->characterClass]);
+    printw("%s", attacker->className);
     attroff(A_BOLD);
 
     printw(" (");
@@ -108,13 +50,13 @@ void performAttack(Character *attacker, Character *defender) {
         // 20% chance to completely miss.
         if (chance < 20) {
             printw("-> Oh no! %s missed the attack on %s...\n\n", 
-                   classNames[attacker->characterClass], classNames[defender->characterClass]);
+                   attacker->className, defender->className);
             return;
         }
         // 20% chance that the defender fails to block.
         if (chance < 40) {
             printw("-> %s failed to defend against %s's attack!\n",
-                   classNames[defender->characterClass], classNames[attacker->characterClass]);
+                   defender->className, attacker->className);
             damage = attacker->attack;  // Full damage, ignoring defense.
         } else {
             damage = attacker->attack - defender->defense;
@@ -126,7 +68,7 @@ void performAttack(Character *attacker, Character *defender) {
         switch (attacker->characterClass) {
             case Warrior:
                 if (rand() % 100 < attacker->specialPercentage) {
-                    printw("-> Critical hit! %s deals double damage!\n", classNames[Warrior]);
+                    printw("-> Critical hit! %s deals double damage!\n", attacker->className);
                     damage *= 2;
                 }
                 break;
@@ -138,7 +80,7 @@ void performAttack(Character *attacker, Character *defender) {
                 break;
             case Ranger:
                 if (rand() % 100 < attacker->specialPercentage) { 
-                    printw("-> Double Strike! %s gets a bonus attack!\n", classNames[Ranger]);
+                    printw("-> Double Strike! %s gets a bonus attack!\n", attacker->className);
                     {
                         int extraDamage = attacker->attack - defender->defense;
                         if (extraDamage < 0)
@@ -171,10 +113,10 @@ void performAttack(Character *attacker, Character *defender) {
     
     // Show attack result.
     printw("-> %s attacks %s for %d damage! %s now has %d HP left.\n\n",
-           classNames[attacker->characterClass],
-           classNames[defender->characterClass],
+           attacker->className,
+           defender->className,
            damage,
-           classNames[defender->characterClass],
+           defender->className,
            defender->hp);
 }
 
@@ -191,7 +133,7 @@ int isPartyDefeated(Character party[], int partySize) {
 void printPartyStatus(const char *partyName, Character party[], int partySize) {
     printw("> %s\n", partyName);
     for (int i = 0; i < partySize; i++) {
-        drawHealthBar(classNames[party[i].characterClass], party[i].hp, 100);
+        drawHealthBar(party[i].className, party[i].hp, 100, BAR_WIDTH);
     }
     printw("\n");
 }
@@ -227,11 +169,13 @@ int main(void) {
     init_pair(3, COLOR_RED, COLOR_BLACK);    // Low HP
     
     // Instantiate characters.
-    Character warrior   = {Warrior,   100, 20, 10, 20};
-    Character mage      = {Mage,      100, 30, 5,  25};
-    Character ranger    = {Ranger,    100, 18, 8,  15};
-    Character paladin   = {Paladin,   100, 15, 12, 30};
-    Character barbarian = {Barbarian, 100, 25, 6,  100};
+    Character warrior, mage, ranger, paladin, barbarian;
+
+    warrior   = createCharacter(Warrior, 100, 20, 10, 20);
+    mage      = createCharacter(Mage,      100, 30, 5,  25);
+    ranger    = createCharacter(Ranger,    100, 18, 8,  15);
+    paladin   = createCharacter(Paladin,   100, 15, 12, 30);
+    barbarian = createCharacter(Barbarian, 100, 25, 6,  100);
     
     // Create two parties.
     Character partyOne[5] = { warrior, mage, ranger, paladin, barbarian };
