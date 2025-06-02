@@ -28,4 +28,6 @@ int getHPColorPair(int hp, int maxHp);
 
 void drawHealthBar(const char *name, int hp, int maxHp, int BAR_WIDTH);
 
+void performAttack(Character *attacker, Character *defender);
+
 #endif
