@@ -1,0 +1,6 @@
+# Directories
+out/
+tutorial/
+
+# Executables
+ui-game
