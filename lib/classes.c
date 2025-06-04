@@ -164,7 +164,11 @@ void performAttack(Character *attacker, Character *defender) {
         if (rand() % 100 < defender->specialPercentage) {
             int heal = (int)(damage * 0.2);
             if (heal < 1) { heal = 1; }
-            printw("-> May the sun shine upon me, my Godness! Paladin heals %d HP\n", heal);
+            printw("-> May the sun shine upon me, my Godness! Paladin heals ");
+            attron(COLOR_PAIR(1));
+            printw("%d ", heal);
+            attroff(COLOR_PAIR(1));
+            printw("HP\n");
             defender->hp += heal;
         }
     }

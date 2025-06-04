@@ -73,7 +73,7 @@ int main(void) {
     /* Define the colors to specific integers */    
     init_pair(1, COLOR_GREEN, COLOR_BLACK);  // High HP
     init_pair(2, COLOR_YELLOW, COLOR_BLACK); // Medium HP
-    init_pair(3, COLOR_RED, COLOR_BLACK);    // Low HP
+    init_pair(3, COLOR_RED, COLOR_BLACK);    // Low 
     
     // Instantiate characters.
     Character warrior, mage, ranger, paladin, barbarian;
@@ -152,7 +152,6 @@ int main(void) {
         printw(">>> Status after round %d:\n", round);
         printPartyStatus("Party One", partyOne, partySize);
         printPartyStatus("Party Two", partyTwo, partySize);
-        printw("-------------------------------------------------\n\n");
         round++;
 
         getch();
